@@ -2,8 +2,6 @@
 
 USER='mongodb'
 PASSWD='mongo321'
-HUB_ACCOUNT='arasbav'
-MY_PASSWORD='SREsre321#@!'
 ZONE='europe-west1-b'
 NAMESPACE='personio'
 OWNER=`whoami`+'@gmail.com'
@@ -15,6 +13,10 @@ DISK_NAME='hdd'
 
 gce_sleep(){
     sleep $1
+}
+
+set_env_var(){
+    export PROJECT_ID=$(gcloud config get-value project)
 }
 
 gce_zone(){
@@ -105,16 +107,20 @@ docker_start(){
     sudo service docker start
 }
 
-docker_hub(){
-    echo "$1" | docker login --username $2 --password-stdin
+gce_docker_hub(){
+    gcloud --quiet auth configure-docker
 }
 
 docker_build(){
-    docker build -t $1/personio_app:latest .
+    docker build -t personio_app .
 }
 
-docker_push(){
-    docker push $1/personio_app
+gce_docker_tag(){
+    docker tag personio_app gcr.io/$PROJECT_ID/personio_app:latest
+}
+
+gce_docker_push(){
+    docker push gcr.io/$PROJECT_ID/personio_app
 }
 
 flask_deploy(){
@@ -188,14 +194,20 @@ k8s_mdb_user $NAMESPACE
 echo "Start Docker"
 docker_start
 
-echo "Docker Build:  Login to Docker Hub"
-docker_hub $MY_PASSWORD $HUB_ACCOUNT
+echo "Set enviroment variable with account id"
+set_env_var
 
-echo "Docker Build:  Flask application - API to MongoDB database"
-docker_build $HUB_ACCOUNT
+echo "Docker Build: Login to GCE Docker Hub"
+gce_docker_hub 
 
-echo "Push Docker Flask Application image to Docker Hub"
-docker_push $HUB_ACCOUNT
+echo "Docker Build: Flask application - API to MongoDB database"
+docker_build 
+
+echo "Tag Docker"
+gce_docker_tag
+
+echo "Push Docker Flask Application image to GCE Docker Hub"
+gce_docker_push 
 
 echo "Deploy Flask App deployment - create Deployment with 3 Pods"
 flask_deploy
