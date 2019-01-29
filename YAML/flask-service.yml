@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-personio
+  namespace: VALUE 
+spec:
+  type: NodePort
+  sessionAffinity: ClientIP
+  ports:
+  - protocol: TCP
+    nodePort: 30018
+    port: 5000
+    targetPort: 5000
+  selector:
+    app: flaskapp

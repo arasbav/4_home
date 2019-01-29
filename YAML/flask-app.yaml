@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaskapp
+  namespace: VALUE 
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flaskapp
+  template:
+    metadata:
+      labels:
+        app: flaskapp
+    spec:
+      containers:
+      - name: flaskapp
+        image: arasbav/personio_app:latest
+        imagePullPolicy: Always 
+        ports:
+           - containerPort: 5000
+        env:
+        - name: MDB_HOST
+          value: $(MONGODB_FLASK_SERVICE_HOST)
+        - name: MDB_PORT
+          value: $(MONGODB_FLASK_SERVICE_PORT)
+        - name: MDB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-credentials
+              key: user
+        - name: MDB_PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-credentials
+              key: password     
+        volumeMounts:
+          - name: flasklogs
+            mountPath: /var/log
+      volumes:
+        - hostPath:
+            path: /var/log
+          name: flasklogs
+

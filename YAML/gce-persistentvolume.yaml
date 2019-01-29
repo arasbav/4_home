@@ -1,0 +1,16 @@
+---
+apiVersion: "v1"
+kind: "PersistentVolume"
+metadata:
+  name: data-volume-NUM
+  namespace: VALUE 
+spec:
+  capacity:
+    storage: SIZEGi 
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: NAME 
+  gcePersistentDisk:
+    pdName: pd-NAME-disk-NUM 
+
