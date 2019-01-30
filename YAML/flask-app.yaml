@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flaskapp
-        image: arasbav/personio_app:latest
+        image: gcr.io/VAR/NAME
         imagePullPolicy: Always 
         ports:
            - containerPort: 5000

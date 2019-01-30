@@ -6,6 +6,7 @@ ZONE='europe-west1-b'
 NAMESPACE='personio'
 OWNER=`whoami`+'@gmail.com'
 K8S='gke-mongodb-personio-api-cluster'
+APP='personio_app2'
 DISK_TYPE='pd-standard'
 DISK_SIZE='10'
 DISK_NAME='hdd'
@@ -112,19 +113,23 @@ gce_docker_hub(){
 }
 
 docker_build(){
-    docker build -t personio_app .
+    docker build -t $APP .
 }
 
 gce_docker_tag(){
-    docker tag personio_app gcr.io/$PROJECT_ID/personio_app:latest
+    docker tag personio_app gcr.io/$PROJECT_ID/$APP:latest
 }
 
 gce_docker_push(){
-    docker push gcr.io/$PROJECT_ID/personio_app
+    docker push gcr.io/$PROJECT_ID/$APP
 }
 
+
 flask_deploy(){
-    k8s_apply flask-app.yaml
+#    export PROJECT_ID=$(gcloud config get-value project)	
+    sed -e "s/VAR/$PROJECT_ID/g" -e "s/NAME/$APP/g" -e "s/VALUE/$NAMESPACE/g" ./YAML/flask-app.yaml > /tmp/flask-app.yaml
+    kubectl apply -f /tmp/flask-app.yaml
+    rm -f /tmp/flask-app.yaml
 }
 
 flask_service(){
