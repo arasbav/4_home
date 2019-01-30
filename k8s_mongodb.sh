@@ -25,12 +25,11 @@
 USER='mongodb'
 PASSWD='mongo321'
 ZONE='europe-west1-b'
-NAMESPACE='personio2'
-OWNER=`whoami`+'@gmail.com'
+NAMESPACE='personio4'
 K8S='gke-mongodb-personio-api-cluster'
-APP='personio_app2'
+MYAPP='personio_app2'
 DISK_TYPE='pd-standard'
-DISK_SIZE='10'
+DISK_SIZE='15'
 DISK_NAME='hdd'
 
 
@@ -139,21 +138,21 @@ gce_docker_hub(){
 }
 
 docker_build(){
-    docker build -t $APP .
+    docker build -t $MYAPP .
 }
 
 gce_docker_tag(){
-    docker tag personio_app gcr.io/$PROJECT_ID/$APP:latest
+    docker tag $MYAPP gcr.io/$PROJECT_ID/$MYAPP:latest
 }
 
 gce_docker_push(){
-    docker push gcr.io/$PROJECT_ID/$APP
+    docker push gcr.io/$PROJECT_ID/$MYAPP
 }
 
 
 flask_deploy(){
     # Get created image and build Flask python app	
-    sed -e "s/VAR/$PROJECT_ID/g" -e "s/NAME/$APP/g" -e "s/VALUE/$NAMESPACE/g" ./YAML/flask-app.yaml > /tmp/flask-app.yaml
+    sed -e "s/VAR/$PROJECT_ID/g" -e "s/NAME/$MYAPP/g" -e "s/VALUE/$NAMESPACE/g" ./YAML/flask-app.yaml > /tmp/flask-app.yaml
     kubectl apply -f /tmp/flask-app.yaml
     rm -f /tmp/flask-app.yaml
 }
@@ -186,7 +185,7 @@ k8s_autoscaler(){
 
 
 
-# DEPLOY K8S with MongoDB, Flask APP and Ingress
+# DEPLOY K8S with MongoDB, Flask MYAPP and Ingress
 
 echo "set zone to $ZONE"
 gce_zone $ZONE
@@ -266,14 +265,20 @@ gce_tls $ZONE $NAMESPACE
 echo "Ingress Resource"
 gce_ingress_resource
 
+echo "Autoscaler"
+k8s_autoscaler
 
 gce_sleep 5
 echo "Finished, please test API"
+echo
 echo "kubectl get ingress ingress-resource -n $NAMESPACE"
 kubectl get ingress ingress-resource -n $NAMESPACE
+echo
 echo "kubectl get service nginx-ingress-controller"
 kubectl get service nginx-ingress-controller
+echo
 echo "-----------------------------------------"
-kubectl -n personio2 describe hpa flaskapp
+kubectl -n $NAMESPACE describe hpa flaskapp
+echo
 echo "-----------------------------------------"
 kubectl get po --all-namespaces|grep -v kube

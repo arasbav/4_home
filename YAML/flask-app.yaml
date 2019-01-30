@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flaskapp
+  name: flaskapp 
   namespace: VALUE 
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: flaskapp
+      app: flaskapp 
   template:
     metadata:
       labels:
-        app: flaskapp
+        app: flaskapp 
     spec:
       containers:
-      - name: flaskapp
+      - name: flaskapp 
         image: gcr.io/VAR/NAME
         imagePullPolicy: Always 
         ports:
@@ -39,10 +39,10 @@ spec:
               name: mongodb-credentials
               key: password     
         volumeMounts:
-          - name: flasklogs
+          - name: flaskapp 
             mountPath: /var/log
       volumes:
         - hostPath:
             path: /var/log
-          name: flasklogs
+          name: flaskapp
 
