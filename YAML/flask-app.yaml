@@ -20,6 +20,9 @@ spec:
         imagePullPolicy: Always 
         ports:
            - containerPort: 5000
+        resources:     
+          requests:
+            cpu: 200m           
         env:
         - name: MDB_HOST
           value: $(MONGODB_FLASK_SERVICE_HOST)

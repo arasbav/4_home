@@ -1,15 +1,38 @@
 #!/bin/bash
 
+##################################################################################
+#                                                                                #
+#  MANDATORY PRE ACTION before you run this script - ENABLE Kubernetes API       #
+#  in Google Cloud.                                                              #
+#  reference: https://cloud.google.com/endpoints/docs/openapi/enable-api         #
+#                                                                                #
+#  This script use gcloud tool therefore can be run just on Kubernetes deployed  #
+#  in Google cloud                                                               #
+#                                                                                #
+##################################################################################
+#                                                                                #
+#  Script will deploy  standard Kubernetes cluster in Google cloud,              #
+#  script also will orchestrate creation of 3 hdd disks and persistent volumes   #
+#  for MongoDB database with 3 copy of replica set, orchestrate, configuree and  #
+#  deploy database,                                                              #
+#  Flask application, generate SSL certificates and deploy Nginx Ingress.        #
+#  More details in README                                                        #
+#                                                                                #
+##################################################################################
+
+
+# Please specify enviroment variables:
 USER='mongodb'
 PASSWD='mongo321'
 ZONE='europe-west1-b'
-NAMESPACE='personio'
+NAMESPACE='personio2'
 OWNER=`whoami`+'@gmail.com'
 K8S='gke-mongodb-personio-api-cluster'
 APP='personio_app2'
 DISK_TYPE='pd-standard'
 DISK_SIZE='10'
 DISK_NAME='hdd'
+
 
 
 gce_sleep(){
@@ -78,6 +101,7 @@ k8s_mongo_db_deploy(){
 }
 
 k8s_wait_for_cluser(){
+    # every 5 seconds function checks if mongodb pods are up and running	
     until kubectl -n $1 --v=0 exec mongod-2 -c mongod-container -- mongo --quiet --eval 'db.getMongo()'; do
 	echo " " 
 	echo "----------------------------------------------------------"
@@ -88,11 +112,12 @@ k8s_wait_for_cluser(){
 }
 
 k8s_mdb_replica(){
-    # Pods names in StatefulSets set are always this same
+    # Pods names in StatefulSets set are always this same - replicaset mambers will have constant names as well 
     kubectl -n $1 exec  mongod-0 -c mongod-container -- mongo --eval 'rs.initiate({_id: "MainRepSet", version: 1, members: [ {_id: 0, host: "mongod-0.mongodb-service.'$1'.svc.cluster.local:27017"}, {_id: 1, host: "mongod-1.mongodb-service.'$1'.svc.cluster.local:27017"}, {_id: 2, host: "mongod-2.mongodb-service.'$1'.svc.cluster.local:27017"} ]});'
 }
 
 k8s_mdb_relica_sync(){
+    # Replica set members must be in sync before we can move forward	 
     kubectl -n $1 exec mongod-0 -c mongod-container -- mongo --eval 'while (rs.status().hasOwnProperty("myState") && rs.status().myState != 1) { print("."); sleep(1000); };'
 
     echo "Wait 20 seconds for Replica Set to be ready"
@@ -101,6 +126,7 @@ k8s_mdb_relica_sync(){
 }
 
 k8s_mdb_user(){
+    # Add application user to MongoDB
     kubectl -n $1 exec mongod-0 -c mongod-container -- mongo --eval 'db.getSiblingDB("admin").createUser({user:"'"${USER}"'",pwd:"'"${PASSWD}"'",roles: ["dbAdminAnyDatabase", "readWriteAnyDatabase"]});'
 }
 
@@ -126,13 +152,14 @@ gce_docker_push(){
 
 
 flask_deploy(){
-#    export PROJECT_ID=$(gcloud config get-value project)	
+    # Get created image and build Flask python app	
     sed -e "s/VAR/$PROJECT_ID/g" -e "s/NAME/$APP/g" -e "s/VALUE/$NAMESPACE/g" ./YAML/flask-app.yaml > /tmp/flask-app.yaml
     kubectl apply -f /tmp/flask-app.yaml
     rm -f /tmp/flask-app.yaml
 }
 
 flask_service(){
+    # Expose app via Service	
     k8s_apply flask-service.yml
 }
 
@@ -151,6 +178,10 @@ gce_tls(){
 
 gce_ingress_resource(){
     k8s_apply tls_ingress.yml
+}
+
+k8s_autoscaler(){
+    kubectl autoscale -n $NAMESPACE deployment flaskapp --max 6 --min 3 --cpu-percent 50
 }
 
 
@@ -242,3 +273,7 @@ echo "kubectl get ingress ingress-resource -n $NAMESPACE"
 kubectl get ingress ingress-resource -n $NAMESPACE
 echo "kubectl get service nginx-ingress-controller"
 kubectl get service nginx-ingress-controller
+echo "-----------------------------------------"
+kubectl -n personio2 describe hpa flaskapp
+echo "-----------------------------------------"
+kubectl get po --all-namespaces|grep -v kube
