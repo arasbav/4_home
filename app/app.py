@@ -65,6 +65,13 @@ def drop_coll(db, coll):
     mycol.drop()
     return str({'collections': mydb.list_collection_names()})
 
+@app.route('/api/mongodb/display/<db>')
+def display(db):
+    mydb = client[db]
+    collist = mydb.list_collection_names()
+    return str({'collections': mydb.list_collection_names()})
+
+
 @app.route('/api/mongodb/find/<db>/<coll>', methods=['GET'])
 def find_data(db, coll):
     mydb = client[db]

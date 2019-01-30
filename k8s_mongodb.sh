@@ -25,11 +25,11 @@
 USER='mongodb'
 PASSWD='mongo321'
 ZONE='europe-west1-b'
-NAMESPACE='personio4'
+NAMESPACE='personioooooooo'
 K8S='gke-mongodb-personio-api-cluster'
-MYAPP='personio_app2'
+MYAPP='personio_appppppppppp'
 DISK_TYPE='pd-standard'
-DISK_SIZE='15'
+DISK_SIZE='20'  #GB - no less than 20GD
 DISK_NAME='hdd'
 
 
