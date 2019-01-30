@@ -189,6 +189,7 @@ k8s_autoscaler(){
 
 echo "set zone to $ZONE"
 gce_zone $ZONE
+gcloud services enable container.googleapis.com
 
 echo "deploy K8s $K8S in GCE cloud"
 gce_k8s $K8S
